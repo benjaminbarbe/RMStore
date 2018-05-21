@@ -24,6 +24,7 @@
 @protocol RMStoreContentDownloader;
 @protocol RMStoreReceiptVerifier;
 @protocol RMStoreTransactionPersistor;
+@protocol RMStoreStorePaymentAcceptor;
 @protocol RMStoreObserver;
 
 extern NSString *const RMStoreErrorDomain;
@@ -51,6 +52,10 @@ extern NSInteger const RMStoreErrorCodeUnableToCompleteVerification;
 /** Returns whether the user is allowed to make payments.
  */
 + (BOOL)canMakePayments;
+
+/** Accept store payments that were stored when the `storePaymentAcceptor` wasn't implemented or returned `NO`.
+ */
+- (void)acceptStoredStorePayments;
 
 /** Request payment of the product with the given product identifier.
  @param productIdentifier The identifier of the product whose payment will be requested.
@@ -158,6 +163,10 @@ extern NSInteger const RMStoreErrorCodeUnableToCompleteVerification;
  */
 @property (nonatomic, weak) id<RMStoreTransactionPersistor> transactionPersistor;
 
+/**
+ The store payment acceptor. Provide your own store payment acceptor to accept payments receieved from the App Store.
+ */
+@property (nonatomic, weak) id<RMStoreStorePaymentAcceptor> storePaymentAcceptor;
 
 #pragma mark Product management
 ///---------------------------------------------
@@ -219,6 +228,18 @@ extern NSInteger const RMStoreErrorCodeUnableToCompleteVerification;
 - (void)verifyTransaction:(SKPaymentTransaction*)transaction
                   success:(void (^)(void))successBlock
                   failure:(void (^)(NSError *error))failureBlock;
+
+@end
+
+@protocol RMStoreStorePaymentAcceptor
+
+/**
+ Allows RMStore to accept a payment made through the App Store. If not ready to accept, return `NO` and RMStore will store the payment. Call `acceptStoredStorePayments` at a later time for RMStore to accept the stored payments.
+ @param payment Payment to accept or store.
+ @param queue Queue the payment request was made on.
+ @param product Product for the payment.
+ */
+- (BOOL)acceptStorePayment:(SKPayment*)payment fromQueue:(SKPaymentQueue*)queue forProduct:(SKProduct*)product;
 
 @end
 
